@@ -1,20 +1,62 @@
 import Head from "next/head";
-import styles from "@/styles/Home.module.css";
-import { useState } from "react";
+import { Key, useState } from "react";
 import axios from "axios";
+import CheckBoxInput from "@/components/elements/inputs/checkbox";
+import WeatherCard from "@/components/elements/card/Card";
+
+type CheckedOptions = {
+  id: Key;
+  value: string;
+  name: string;
+};
 
 export default function Home() {
+  const [isChecked, setIsChecked] = useState(false);
+  const [unit, setUnit] = useState("");
+  const [weatherData, setWeatherData] = useState();
+
+  const options = [
+    {
+      id: 1,
+      value: "metric",
+      name: "Celsius",
+    },
+    {
+      id: 2,
+      value: "imperial",
+      name: "Fahrenheit",
+    },
+  ];
+
   const [city, setCity] = useState();
   // @ts-ignore
   const onSubmit = async (e) => {
     e.preventDefault();
-    const res = await axios.get("/api/city/getCity");
-    const data = await res.data;
+
+    let formData = {
+      city: city,
+      units: unit,
+    };
+
+    const res = await axios.post("/api/weather/getWeatherData", {
+      headers: {
+        "Content-Type": "application/json",
+      },
+      data: formData,
+    });
+    const { data } = await res.data;
+
+    setWeatherData(data);
 
     console.log("====================================");
     console.log(data);
     console.log("====================================");
   };
+
+  // if (!weatherData) {
+  //   return <p>Loading</p>;
+  // }
+
   return (
     <>
       <Head>
@@ -23,18 +65,64 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className={styles.main}>
+      <main className="flex border-4 h-screen w-full">
         {/* @ts-ignore */}
-        <form onSubmit={onSubmit}>
-          <input
-            type="text"
-            onChange={(e) => {
-              // @ts-ignore
-              setCity(e.target.value);
-            }}
-          />
-          <button type="submit">Get City</button>
-        </form>
+        <div className="flex h-full w-full justify-center items-center">
+          <div className="flex flex-col lg:w-1/3 w-full h-auto m-auto shadow-2xl">
+            <div className="flex">
+              <h1 className="text-2xl p-10">Weather APP</h1>
+            </div>
+            <div className="flex-flex-col">
+              <form className="flex flex-col" onSubmit={onSubmit}>
+                <div className="flex">
+                  <label className="p-2 mx-2" htmlFor="city">
+                    City
+                    <input
+                      className="bg-slate-200 rounded-md px-4 p-2 border"
+                      type="text"
+                      onChange={(e) => {
+                        // @ts-ignore
+                        setCity(e.target.value);
+                      }}
+                    />
+                  </label>
+                  <button
+                    className="rounded-lg px-2 bg-blue-500 text-white"
+                    type="submit"
+                  >
+                    Get City
+                  </button>
+                </div>
+                <div className="flex">
+                  {...options.map((option) => (
+                    // @ts-ignore
+                    <CheckBoxInput
+                      isChecked={unit === option.value}
+                      key={option.id}
+                      value={option.value}
+                      name={option.name}
+                      onChange={() => setUnit(option.value)}
+                    >
+                      {option.name}
+                    </CheckBoxInput>
+                  ))}
+                </div>
+              </form>
+            </div>
+            <div className="flex">
+              <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+                {weatherData?.map((item) => (
+                  <tr>
+                    <td scope="col" className="px-6 py-3">
+                      {item.base}
+                    </td>
+                    <td>Value</td>
+                  </tr>
+                ))}
+              </table>
+            </div>
+          </div>
+        </div>
       </main>
     </>
   );
